@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { WebContents } from '../web-content/entities/webContents.entity';
+import { WebContents } from '../../db/entities/webContents.entity';
 import { Repository } from 'typeorm';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import puppeteer, { Page } from 'puppeteer';
+import { Cron } from '@nestjs/schedule';
+import { Page } from 'puppeteer';
 import { setTimeout } from 'timers/promises';
 import {
   series_item,
@@ -36,15 +36,14 @@ import {
   series_webtoon_url,
   series_webnovel_url,
   series_first_page_next_btn,
-  login
+  login,
 } from '../constants/naver-series';
 import { RedisService } from '../redis/redis.service';
 import _ from 'lodash';
-import { ContentType } from '../web-content/webContent.type';
-import { PReviews } from '../review/entities/platform.reviews.entity';
+import { ContentType } from '../../db/type/webContent.type';
+import { PReviews } from '../../db/entities/platform.reviews.entity';
 import { Cluster } from 'puppeteer-cluster';
 
-@Injectable()
 @Injectable()
 export class NaverSeriesService {
   constructor(
@@ -194,7 +193,7 @@ export class NaverSeriesService {
       await login(page);
 
       let i = 1; // index for rank
-      let contentType = link.includes('novel')
+      const contentType = link.includes('novel')
         ? ContentType.WEBNOVEL
         : ContentType.WEBTOON;
       for (const webContent of webContentList) {
@@ -324,7 +323,7 @@ export class NaverSeriesService {
             reviewList = reviewList.concat(allReviewList);
           }
 
-          let rank = link.includes('top100') ? { naver: i++ } : null;
+          const rank = link.includes('top100') ? { naver: i++ } : null;
           console.log(title, reviewList.length, rank, contentType);
 
           // csv string에 추가할 데이터
