@@ -44,6 +44,7 @@ const typeOrmModuleOptions = {
     TypeOrmModule.forRootAsync(typeOrmModuleOptions),
     CrawlerModule,
     DbModule,
+    NaverSeriesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
