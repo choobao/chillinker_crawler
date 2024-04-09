@@ -16,7 +16,7 @@ export class PReviews {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'varchar', nullable: false, length: 1000 })
+  @Column({ type: 'text', nullable: false })
   content: string;
 
   @Column({ type: 'int', default: 0, nullable: false })

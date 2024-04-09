@@ -23,7 +23,7 @@ export class RidiDbController {
 
     const datas = await this.dbService.readJson(path, posts);
 
-    await this.dbService.saveWebContentToDb(datas);
+    await this.dbService.saveWebNoveltToDb(datas);
   }
 
   @Get('review')

@@ -26,10 +26,12 @@ export class RidiDbService {
 
   async saveWebNoveltToDb(datas: any) {
     console.log('통과');
+    console.log(datas[0]);
     for (let i = 0; i < datas.length; i++) {
       const { url, rank, isAdult } = datas[i];
       const { title, dsc, img, author, keyword, genre, pubDate } =
         datas[i].webContent[0];
+
       const platformName = 'Ridi';
 
       const platform = {}; // 빈 객체 생성
@@ -45,15 +47,20 @@ export class RidiDbService {
 
       // console.log(datas[8].webContent[0].dsc[0]);
 
+      const a = genre.join(', ');
+      const b = keyword.join(', ');
+      const c = author.join(', ');
+      const d = dsc.join(', ');
+
       await this.webContentRepository.save({
         contentType: ContentType.WEBNOVEL,
         rank: rrank,
         title: title,
-        desc: dsc[0],
+        desc: d,
         image: img,
-        author: author[0],
-        keyword: keyword[0],
-        category: genre[0],
+        author: c,
+        keyword: b,
+        category: a,
         platform,
         pubDate: data,
       });
@@ -63,11 +70,11 @@ export class RidiDbService {
   }
 
   async saveWebContentToDb(datas: any) {
-    console.log('통과');
     for (let i = 0; i < datas.length; i++) {
       const { url, rank, isAdult } = datas[i];
       const { title, dsc, img, author, keyword, genre, pubDate } =
         datas[i].webContent[0];
+
       const platformName = 'Ridi';
 
       const platform = {}; // 빈 객체 생성
@@ -83,31 +90,35 @@ export class RidiDbService {
 
       // console.log(datas[8].webContent[0].dsc[0]);
 
+      const a = genre.join(', ');
+      const b = keyword.join(', ');
+      const c = author.join(', ');
+      const d = dsc.join(', ');
+
       await this.webContentRepository.save({
-        contentType: ContentType.WEBNOVEL,
+        contentType: ContentType.WEBTOON,
         rank: rrank,
         title: title,
-        desc: dsc[0],
+        desc: d,
         image: img,
-        author: author[0],
-        keyword: keyword[0],
-        category: genre[0],
+        author: c,
+        keyword: b,
+        category: a,
         platform,
         pubDate: data,
       });
     }
   }
   async saveReviewToDb(datas: any) {
-    console.log('통과');
+    console.log(datas[0]);
+
     for (let i = 0; i < datas.length; i++) {
-      const { contentTitle, scrapDate } = datas[i];
+      const { contentTitle, reviewsData } = datas[i];
 
       const webContentId = await this.webContentRepository.findOne({
         where: { title: contentTitle },
       });
 
-      console.log(webContentId.id);
-      console.log(datas[0].reviewsData[0]);
       for (let j = 0; j < datas[i].reviewsData.length; j++) {
         const { writer, content, likeCount, date } = datas[i].reviewsData[j];
 

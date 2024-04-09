@@ -47,7 +47,11 @@ export class RidiCrawlerService {
         );
         return items.map((item) => {
           const link = item.querySelector('a')?.getAttribute('href');
-          const rank = item.querySelector('div > div.fig-9njjsy')?.innerHTML;
+          let rank = item.querySelector('div > div.fig-9njjsy')?.innerHTML;
+
+          if (+rank > 20) {
+            rank = null;
+          }
 
           return { link, rank };
         });
@@ -93,7 +97,7 @@ export class RidiCrawlerService {
           postPage.goto(newUrl, { timeout: 65000 });
 
           const webContentAndReview = await this.scrapPostAndReview(
-            link.rank,
+            +link.rank,
             postPage,
             type,
           );
@@ -121,11 +125,11 @@ export class RidiCrawlerService {
 
         return items.map((item) => {
           return {
-            // isAdult: item.querySelector(
-            //   '#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_thumbnail_wrap > div.header_thumbnail.book_macro_200.detail_scalable_thumbnail > div > div > span',
-            // )
-            //   ? true
-            //   : false,
+            isAdult: item.querySelector(
+              '#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_thumbnail_wrap > div.header_thumbnail.book_macro_200.detail_scalable_thumbnail > div > div > span',
+            )
+              ? true
+              : false,
             title: item.querySelector(
               '#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_info_wrap > div.info_title_wrap > h1',
             )?.textContent,
@@ -183,7 +187,6 @@ export class RidiCrawlerService {
                   keywords.push(keyword);
                 }),
               );
-              console.log(keywords);
               return [...keywords];
             })(),
             author: (() => {
@@ -224,14 +227,7 @@ export class RidiCrawlerService {
       });
 
       let isAdult = false;
-
-      if (type === 'webNovels') {
-        isAdult = page.querySelector(
-          '#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_thumbnail_wrap > div.header_thumbnail.book_macro_200.detail_scalable_thumbnail > div > div > span',
-        )
-          ? true
-          : false;
-      } else {
+      if (type == 'webContents') {
         isAdult = webContent.some((content) => content.genre.includes('성인'));
       }
 
@@ -363,6 +359,8 @@ export class RidiCrawlerService {
         const imageUrls = webContentAndReview[i].webContents.webContent.map(
           (item) => item.img,
         );
+
+        console.log(webContentAndReview[i].webContents);
         const fileName = imageUrls.map((url) => {
           const matchResult = url.match(/(?<=cover\/)\d+/);
           if (matchResult) {

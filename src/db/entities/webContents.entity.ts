@@ -12,10 +12,7 @@ import { IsEnum, IsInt, IsString } from 'class-validator';
 import { PReviews } from './platform.reviews.entity';
 import { ContentType } from '../type/webContent.type';
 import { CReviews } from './chillinker.reviews.entity';
-
-@Entity({
-  name: 'webContents',
-})
+@Entity('webContents')
 export class WebContents {
   /**
    * id
@@ -80,7 +77,7 @@ export class WebContents {
    * keyword
    * @example "['무협', '스토리']"
    */
-  @Column({ type: 'varchar', nullable: true })
+  @Column({ type: 'varchar', nullable: true, length: 500 })
   keyword?: string;
 
   /**
