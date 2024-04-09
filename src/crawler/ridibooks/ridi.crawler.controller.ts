@@ -9,7 +9,7 @@ export class RidiCrawlerController {
   //리디 웹툰
 
   //리디 웹소설
-  @Post('web')
+  @Post()
   async crawlPages(
     @Body('type') type: string,
     @Body('maxPages', ParseIntPipe) maxPages: number,

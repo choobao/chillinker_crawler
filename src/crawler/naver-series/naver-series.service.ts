@@ -38,11 +38,12 @@ import {
   series_first_page_next_btn,
   login,
 } from '../constants/naver-series';
-import { RedisService } from '../redis/redis.service';
+
 import _ from 'lodash';
 import { ContentType } from '../../db/type/webContent.type';
 import { PReviews } from '../../db/entities/platform.reviews.entity';
 import { Cluster } from 'puppeteer-cluster';
+import { RedisService } from 'src/redis/redis.service';
 
 @Injectable()
 export class NaverSeriesService {
