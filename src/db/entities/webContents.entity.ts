@@ -13,7 +13,9 @@ import { PReviews } from './platform.reviews.entity';
 import { ContentType } from '../type/webContent.type';
 import { CReviews } from './chillinker.reviews.entity';
 
-@Entity('webContents')
+@Entity({
+  name: 'webContents',
+})
 export class WebContents {
   /**
    * id

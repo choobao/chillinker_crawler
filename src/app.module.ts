@@ -2,14 +2,11 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { AppService } from './app.service';
-
 import { DbModule } from './db/db.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { PReviews } from './db/entities/platform.reviews.entity';
-import { WebContents } from './db/entities/webContents.entity';
-import Joi from 'joi';
 import { CrawlerModule } from './crawler/crawler.module';
+import Joi from 'joi';
 
 const typeOrmModuleOptions = {
   useFactory: async (
@@ -22,7 +19,7 @@ const typeOrmModuleOptions = {
     host: configService.get('DB_HOST'),
     port: configService.get('DB_PORT'),
     database: configService.get('DB_NAME'),
-    entities: [PReviews, WebContents],
+    autoLoadEntities: true,
     synchronize: configService.get('DB_SYNC'),
     logging: true,
   }),
