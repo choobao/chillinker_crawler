@@ -13,10 +13,21 @@ import {
   mrblue_webtoon_allgenre_sortbyreview_backpart,
 } from './path';
 import { setTimeout } from 'timers/promises';
+import { InjectRepository } from '@nestjs/typeorm';
+import { WebContents } from 'src/db/entities/webContents.entity';
+import { PReviews } from 'src/db/entities/platform.reviews.entity';
+import { Repository } from 'typeorm';
+import { ContentType } from 'src/db/type/webContent.type';
 
 @Injectable()
 export class MrblueService {
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    @InjectRepository(WebContents)
+    private readonly webContentRepository: Repository<WebContents>,
+    @InjectRepository(PReviews)
+    private readonly PReviewsRepository: Repository<PReviews>,
+  ) {}
   //웹소설 크롤링
   async crawlWebnovels() {
     try {
@@ -37,6 +48,79 @@ export class MrblueService {
         currentPage += 1;
       }
       await browser.close();
+
+      for (let i = 0; i < data.length; i++) {
+        const {
+          platform,
+          img,
+          contentType,
+          genre,
+          genreDetail,
+          title,
+          author,
+          isAdult,
+          publishDate,
+          dsc,
+          keywordList,
+          reviews,
+        } = data[i];
+
+        const existedContents = await this.webContentRepository.findOneBy({
+          title,
+          author,
+        });
+
+        if (existedContents) {
+          await this.webContentRepository.update(existedContents.id, {
+            platform,
+          });
+        } else {
+          await this.webContentRepository.save({
+            contentType: ContentType.WEBNOVEL,
+            title,
+            desc: dsc,
+            image: img,
+            author,
+            keyword: keywordList.join(', '),
+            category: genre === '연재' ? genreDetail : genre,
+            platform,
+            pubDate: publishDate,
+            // isAdult
+          });
+        }
+
+        if (reviews.length >= 1) {
+          const contents = await this.webContentRepository.findOneBy({
+            title,
+            author,
+          });
+          for (let j = 0; j < reviews.length; j++) {
+            const { content, writerId, createdAt, likeCount, platform } =
+              reviews[j];
+
+            const review = await this.PReviewsRepository.findOneBy({
+              webContentId: contents.id,
+              writer: writerId,
+              content,
+            });
+
+            if (review) {
+              continue;
+            }
+
+            await this.PReviewsRepository.save({
+              webContentId: +contents.id,
+              content,
+              likeCount,
+              writer: writerId,
+              date: createdAt,
+              // platform
+            });
+          }
+        }
+      }
+      console.log('저장완료');
+
       return data;
     } catch (err) {
       throw new Error(err);
@@ -103,9 +187,11 @@ export class MrblueService {
             'div.info-box > div.txt-info > div.txt > p:nth-child(2) > span:nth-child(1)',
           ).textContent;
           const isAdult = ageLimit === '19세 이용가' ? 1 : 0;
-          const publishDate = item.querySelector(
-            'div.info-box > div.txt-info > div.txt > p.mt10 > span:nth-child(1)',
-          )?.textContent;
+          const publishDate = item
+            .querySelector(
+              'div.info-box > div.txt-info > div.txt > p.mt10 > span:nth-child(1)',
+            )
+            ?.textContent.replace(/\./g, '-');
           const dsc = item
             .querySelector('div > div.txt-box')
             ?.textContent.replace(' ', '');
@@ -153,6 +239,79 @@ export class MrblueService {
 
       const data = await this.getWebnovelRank(page);
       await browser.close();
+
+      for (let i = 0; i < data.length; i++) {
+        const {
+          rank,
+          platform,
+          img,
+          contentType,
+          genre,
+          genreDetail,
+          title,
+          author,
+          isAdult,
+          publishDate,
+          dsc,
+          keywordList,
+          reviews,
+        } = data[i];
+
+        const existedContents = await this.webContentRepository.findOneBy({
+          title,
+          author,
+        });
+
+        if (existedContents) {
+          await this.webContentRepository.update(existedContents.id, {
+            rank,
+            platform,
+          });
+        } else {
+          await this.webContentRepository.save({
+            rank,
+            contentType: ContentType.WEBNOVEL,
+            title,
+            desc: dsc,
+            image: img,
+            author,
+            keyword: keywordList.join(', '),
+            category: genre === '연재' ? genreDetail : genre,
+            platform,
+            pubDate: publishDate,
+            // isAdult
+          });
+        }
+        if (reviews.length >= 1) {
+          const contents = await this.webContentRepository.findOneBy({
+            title,
+            author,
+          });
+          for (let j = 0; j < reviews.length; j++) {
+            const { content, writerId, createdAt, likeCount, platform } =
+              reviews[j];
+
+            const review = await this.PReviewsRepository.findOneBy({
+              webContentId: contents.id,
+              writer: writerId,
+              content,
+            });
+
+            if (review) {
+              continue;
+            }
+            await this.PReviewsRepository.save({
+              webContentId: +contents.id,
+              content,
+              likeCount,
+              writer: writerId,
+              date: createdAt,
+              // platform
+            });
+          }
+        }
+      }
+      console.log('저장완료');
       return data;
     } catch (err) {
       throw new Error(err);
@@ -239,9 +398,11 @@ export class MrblueService {
               'div.info-box > div.txt-info > div.txt > p:nth-child(2) > span:nth-child(1)',
             ).textContent;
             const isAdult = ageLimit === '19세 이용가' ? 1 : 0;
-            const publishDate = item.querySelector(
-              'div.info-box > div.txt-info > div.txt > p.mt10 > span:nth-child(1)',
-            )?.textContent;
+            const publishDate = item
+              .querySelector(
+                'div.info-box > div.txt-info > div.txt > p.mt10 > span:nth-child(1)',
+              )
+              ?.textContent.replace(/\./g, '-');
             const dsc = item
               .querySelector('div > div.txt-box')
               ?.textContent.replace(' ', '');
@@ -252,7 +413,7 @@ export class MrblueService {
             ).map((keyword) => keyword.textContent);
 
             return {
-              rank: { mrblue: rank },
+              rank: { mrblue: +rank },
               platform,
               img,
               contentType,
@@ -300,6 +461,77 @@ export class MrblueService {
         currentPage++;
       }
       await browser.close();
+
+      for (let i = 0; i < data.length; i++) {
+        const {
+          platform,
+          img,
+          contentType,
+          genre,
+          title,
+          author,
+          isAdult,
+          publishDate,
+          dsc,
+          keywordList,
+          reviews,
+        } = data[i];
+
+        const existedContents = await this.webContentRepository.findOneBy({
+          title,
+          author,
+        });
+
+        if (existedContents) {
+          await this.webContentRepository.update(existedContents.id, {
+            platform,
+          });
+        } else {
+          await this.webContentRepository.save({
+            platform,
+            contentType: ContentType.WEBTOON,
+            title,
+            desc: dsc,
+            image: img,
+            author,
+            keyword: keywordList.join(', '),
+            category: genre,
+            pubDate: publishDate,
+            // isAdult
+          });
+        }
+
+        if (reviews.length >= 1) {
+          const contents = await this.webContentRepository.findOneBy({
+            title,
+            author,
+          });
+          for (let j = 0; j < reviews.length; j++) {
+            const { content, writerId, createdAt, likeCount, platform } =
+              reviews[j];
+
+            const review = await this.PReviewsRepository.findOneBy({
+              webContentId: contents.id,
+              writer: writerId,
+              content,
+            });
+
+            if (review) {
+              continue;
+            }
+            await this.PReviewsRepository.save({
+              webContentId: +contents.id,
+              content,
+              likeCount,
+              writer: writerId,
+              date: createdAt,
+              // platform
+            });
+          }
+        }
+      }
+      console.log('저장완료');
+
       return data;
     } catch (err) {
       throw new Error(`${err}`);
@@ -368,9 +600,11 @@ export class MrblueService {
           const publishDate = item.querySelector(
             '#volList > li:nth-child(1) > div.vol-info > p.info-summary > span:nth-child(1)',
           )?.textContent;
-          const dsc = item.querySelector(
-            'div:nth-child(2) > div > div.detail-con > div> div.txt-box',
-          )?.textContent;
+          const dsc = item
+            .querySelector(
+              'div:nth-child(2) > div > div.detail-con > div> div.txt-box',
+            )
+            ?.textContent.replace(/\./g, '-');
           const keywordList = Array.from(
             document.querySelectorAll(
               '#contents > div:nth-child(2) > div > div.detail-con > ul.additional-info-keyword > li > a.keyword',
@@ -414,6 +648,80 @@ export class MrblueService {
 
       const data = await this.getWebtoonRank(page);
       await browser.close();
+
+      for (let i = 0; i < data.length; i++) {
+        const {
+          rank,
+          platform,
+          img,
+          contentType,
+          genre,
+          title,
+          author,
+          isAdult,
+          publishDate,
+          dsc,
+          keywordList,
+          reviews,
+        } = data[i];
+
+        const existedContents = await this.webContentRepository.findOneBy({
+          title,
+          author,
+        });
+
+        if (existedContents) {
+          await this.webContentRepository.update(existedContents.id, {
+            rank,
+            platform,
+          });
+        } else {
+          await this.webContentRepository.save({
+            rank,
+            platform,
+            contentType: ContentType.WEBTOON,
+            title,
+            desc: dsc,
+            image: img,
+            author,
+            keyword: keywordList.join(', '),
+            category: genre,
+            pubDate: publishDate,
+            // isAdult
+          });
+        }
+
+        if (reviews.length >= 1) {
+          const contents = await this.webContentRepository.findOneBy({
+            title,
+            author,
+          });
+          for (let j = 0; j < reviews.length; j++) {
+            const { content, writerId, createdAt, likeCount, platform } =
+              reviews[j];
+
+            const review = await this.PReviewsRepository.findOneBy({
+              webContentId: contents.id,
+              writer: writerId,
+              content,
+            });
+
+            if (review) {
+              continue;
+            }
+
+            await this.PReviewsRepository.save({
+              webContentId: +contents.id,
+              content,
+              likeCount,
+              writer: writerId,
+              date: createdAt,
+              // platform
+            });
+          }
+        }
+      }
+      console.log('저장완료');
       return data;
     } catch (err) {
       throw new Error(err);
@@ -495,9 +803,11 @@ export class MrblueService {
               'div.cover-section.webtoon-detail > div.cover-section-inner.detail-con > div > div > div.txt > p:nth-child(2) > span:nth-child(1)',
             ).textContent;
             const isAdult = ageLimit === '19세 이용가' ? 1 : 0;
-            const publishDate = item.querySelector(
-              '#volList > li:nth-child(1) > div.vol-info > p.info-summary > span:nth-child(1)',
-            )?.textContent;
+            const publishDate = item
+              .querySelector(
+                '#volList > li:nth-child(1) > div.vol-info > p.info-summary > span:nth-child(1)',
+              )
+              ?.textContent.replace(/\./g, '-');
             const dsc = item.querySelector(
               'div:nth-child(2) > div > div.detail-con > div> div.txt-box',
             )?.textContent;
@@ -508,7 +818,7 @@ export class MrblueService {
             ).map((keyword) => keyword.textContent);
 
             return {
-              rank: { mrblue: rank },
+              rank: { mrblue: +rank },
               platform,
               img,
               contentType,
@@ -591,9 +901,10 @@ export class MrblueService {
               return {
                 platform: 'mrblue',
                 writerId: item.querySelector('p > strong')?.textContent,
-                createdAt: item.querySelector('p.star-box > span.date')
-                  ?.textContent,
-                Content: item.querySelector('p.txt')?.textContent,
+                createdAt: item
+                  .querySelector('p.star-box > span.date')
+                  ?.textContent.replace(/\./g, '-'),
+                content: item.querySelector('p.txt')?.textContent,
                 likeCount: item.querySelector('a > span.cnt')?.textContent,
               };
             });
@@ -620,8 +931,9 @@ export class MrblueService {
               return {
                 platform: 'mrblue',
                 writerId: item.querySelector('p > strong')?.textContent,
-                createdAt: item.querySelector('p.star-box > span.date')
-                  ?.textContent,
+                createdAt: item
+                  .querySelector('p.star-box > span.date')
+                  ?.textContent.replace(/\./g, '-'),
                 content: item.querySelector('p.txt')?.textContent,
                 likeCount: item.querySelector('a > span.cnt')?.textContent,
               };
