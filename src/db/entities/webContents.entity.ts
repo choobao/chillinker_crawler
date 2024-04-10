@@ -12,7 +12,7 @@ import { IsEnum, IsInt, IsString } from 'class-validator';
 import { PReviews } from './platform.reviews.entity';
 import { ContentType } from '../type/webContent.type';
 import { CReviews } from './chillinker.reviews.entity';
-@Entity('webContents')
+@Entity('web_contents')
 export class WebContents {
   /**
    * id
