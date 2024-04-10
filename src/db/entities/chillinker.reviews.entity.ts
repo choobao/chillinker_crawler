@@ -12,7 +12,7 @@ import { Users } from './user.entity';
 import { WebContents } from './webContents.entity';
 
 @Entity({
-  name: 'cReviews',
+  name: 'c_reviews',
 })
 export class CReviews {
   @PrimaryGeneratedColumn()
