@@ -11,11 +11,9 @@ export class RedisService {
       password: this.configService.get<string>('REDIS_PASSWORD'),
     });
   }
-
   getClient(): Redis {
     return this.client;
   }
-
   async save(key: string, value: number, expiresInSec?: number) {
     if (expiresInSec) {
       await this.client.setex(key, expiresInSec, value);
@@ -23,7 +21,6 @@ export class RedisService {
       await this.client.set(key, value);
     }
   }
-
   async getValue(key: string): Promise<string | null> {
     const value = await this.client.get(key);
     return value;

@@ -36,7 +36,7 @@ export class RidiCrawlerController {
 
       console.log(tabs);
 
-      const webContentAndReview = await this.crawlingService.crawling(
+      const posts = await this.crawlingService.crawling(
         browser,
         url,
         tabs,
@@ -44,7 +44,51 @@ export class RidiCrawlerController {
         type,
       );
 
-      await this.crawlingService.createJsonFile(type, webContentAndReview);
+      console.log(posts[0].webContent);
+
+      await this.crawlingService.createJsonFile(type, posts);
+
+      await page.close();
+      console.log('스크래핑 종료');
+    } catch (err) {
+      console.log('❌❌❌❌', err);
+    }
+  }
+
+  @Post('best')
+  async crawlBest20Pages(@Body('type') type: string) {
+    try {
+      const url = ridibooks.ridiPage;
+      const browser = await puppeteer.launch({
+        headless: false,
+      });
+      const page = await browser.newPage();
+
+      await this.crawlingService.login(page, url);
+
+      const linkList = await this.crawlingService.getBest20LinkList(
+        page,
+        type,
+        url,
+      );
+
+      //탭 갯수 지정
+      let tabCount = 1;
+      const tabs = await this.crawlingService.divideArray(tabCount, linkList);
+
+      console.log(tabs);
+
+      const posts = await this.crawlingService.crawling(
+        browser,
+        url,
+        tabs,
+        linkList,
+        type,
+      );
+
+      console.log(posts[0].webContent);
+
+      await this.crawlingService.createJsonFile(type, posts);
 
       await page.close();
       console.log('스크래핑 종료');
