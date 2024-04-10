@@ -39,6 +39,14 @@ export class WebContents {
   title: string;
 
   /**
+   * isAdult
+   * @example 0
+   */
+  @IsInt()
+  @Column({ type: 'tinyint', default: 0 })
+  isAdult: number;
+
+  /**
    * desc
    * @example "대 화산파 13대 제자. 천하삼대검수(天下三代劍手). 매화검존(梅花劍尊) 청명(靑明) 천하를 혼란에 빠뜨린 고금제일마 천마(天魔)의 목을 치고 십만대산의 정상에서 영면. 백 년의 시간을 뛰어넘어 아이의 몸으로 다시 살아나다."
    */

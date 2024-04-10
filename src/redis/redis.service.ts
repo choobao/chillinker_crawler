@@ -14,13 +14,15 @@ export class RedisService {
   getClient(): Redis {
     return this.client;
   }
+
   async save(key: string, value: number, expiresInSec?: number) {
     if (expiresInSec) {
       await this.client.setex(key, expiresInSec, value);
     } else {
-      await this.client.set(key, value);
+      await this.client.setex(key, 32 * 3600, value); // 32h expire
     }
   }
+
   async getValue(key: string): Promise<string | null> {
     const value = await this.client.get(key);
     return value;

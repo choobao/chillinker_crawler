@@ -43,7 +43,7 @@ import _ from 'lodash';
 import { ContentType } from '../../db/type/webContent.type';
 import { PReviews } from '../../db/entities/platform.reviews.entity';
 import { Cluster } from 'puppeteer-cluster';
-import { RedisService } from 'src/redis/redis.service';
+import { RedisService } from '../../redis/redis.service';
 
 @Injectable()
 export class NaverSeriesService {
