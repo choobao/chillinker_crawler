@@ -188,7 +188,25 @@ export class RidiCrawlerService {
   }
 
   async scrapPostAndReview(rank: any, page: any, type: string) {
-    try {
+    const cluster = await Cluster.launch({
+      concurrency: Cluster.CONCURRENCY_CONTEXT,
+      maxConcurrency: 4,
+      timeout: 40000000,
+      monitor: true,
+      retryLimit: 5,
+      // puppeteerOptions: {
+      //   headless: true,
+      //   userDataDir: './tmp',
+      // },
+    });
+
+    cluster.on('taskerror', (err, data) => {
+      console.log(`Error crawling ${data.link}: ${err.message}`);
+    });
+
+    // let contentTitle, webContents, reviews;
+
+    await cluster.task(async ({ page, data: { rank, type } }) => {
       await page.waitForNavigation({ waitUntil: 'networkidle2' });
       await page.waitForSelector(
         'div.header_thumbnail_wrap > div.header_thumbnail.book_macro_200.detail_scalable_thumbnail > div > div > div > img',
@@ -329,16 +347,19 @@ export class RidiCrawlerService {
 
       page.bringToFront();
 
-      const reviews = await this.scrapReviews(contentTitle, page);
+      const reviews = await this.scrapReviews(contentTitle[0], page);
 
       return {
         contentTitle,
         webContents,
         reviews,
       };
-    } catch (err) {
-      console.log('❌❌❌❌', page.url(), err);
-    }
+    });
+
+    cluster.queue({ rank, type });
+
+    await cluster.idle();
+    await cluster.close();
   }
 
   async scrapReviews(contentTitle: string, page: any) {

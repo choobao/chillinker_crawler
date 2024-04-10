@@ -73,7 +73,7 @@ export class RidiCrawlerController {
       );
 
       //탭 갯수 지정
-      let tabCount = 1;
+      let tabCount = 2;
       const tabs = await this.crawlingService.divideArray(tabCount, linkList);
 
       console.log(tabs);
