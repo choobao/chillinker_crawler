@@ -4,6 +4,7 @@ import { promises as fs } from 'fs';
 import { ridibooks } from '../constants/ridibooks';
 import { Cluster } from 'puppeteer-cluster';
 import { Cron } from '@nestjs/schedule';
+import { setTimeout as setTimeoutPromise } from 'timers/promises';
 
 dotenv.config();
 
@@ -394,11 +395,17 @@ export class RidiCrawlerService {
         break;
       }
 
+      await page.waitForSelector(ridibooks.moreReviewBtn);
+
       await page.click(ridibooks.moreReviewBtn);
 
       reviewList = await page.$$(
         '#review_list_section > div.review_list_wrapper.js_review_list_wrapper.active > ul > li',
       );
+
+      if (!(await page.$(ridibooks.moreReviewBtn))) {
+        break;
+      }
 
       console.log(reviewList.length);
     }

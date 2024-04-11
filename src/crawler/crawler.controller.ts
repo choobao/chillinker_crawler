@@ -9,6 +9,6 @@ export class CrawlerController {
   @Get('test')
   async test() {
     //return await this.kakaoService.getDailyRank_20_WebContents(Type.WEBNOVEL);
-    return await this.kakaoService.getAll_96_WebContents(Type.WEBNOVEL);
+    // return await this.kakaoService.getAll_96_WebContents(Type.WEBNOVEL);
   }
 }

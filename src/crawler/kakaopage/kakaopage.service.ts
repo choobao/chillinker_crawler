@@ -17,9 +17,10 @@ import {
 import { ContentType } from '../../db/type/webContent.type';
 import { RedisService } from '../../redis/redis.service';
 import { InjectRepository } from '@nestjs/typeorm';
-import { WebContents } from '../../db/entities/webContents.entity';
+
 import { Repository } from 'typeorm';
 import { PReviews } from '../../db/entities/platform.reviews.entity';
+import { WebContents } from '../../db/entities/webContents.entity';
 
 @Injectable()
 export class KakaopageService {
@@ -28,7 +29,6 @@ export class KakaopageService {
     private readonly contentRepository: Repository<WebContents>,
     private readonly redisService: RedisService,
   ) {}
-
   // 50위까지의 랭킹 정보 요청
   async requestDailyRanking(contentType: Type) {
     try {
@@ -58,7 +58,6 @@ export class KakaopageService {
       throw err;
     }
   }
-
   async requestWebContent(id: number, rank: number = null) {
     try {
       const { data } = await axios({
@@ -87,18 +86,14 @@ export class KakaopageService {
       const author = webContent.authors;
       const isAdult = webContent.ageGrade === 'Nineteen' ? 1 : 0;
       const pubDate = new Date(webContent.startSaleDt);
-
       const keyword = await this.requestWebContentKeywordsAndRecommends(id);
-
       const reviewCount = webContent.serviceProperty.commentCount;
       let reviewList = [];
       const pageCount = Math.ceil(reviewCount / 25); // 한 페이지당 25개 리뷰 존재할때 필요한 페이지 수
-
       for (let i = 1; i <= pageCount; i++) {
         const reviews = await this.requestWebContentReviews(id, i);
         reviewList = reviewList.concat(reviews);
       }
-
       return {
         platform: { kakao: url },
         title,
@@ -117,7 +112,6 @@ export class KakaopageService {
       throw err;
     }
   }
-
   // 작품의 키워드와 추천작 정보 요청
   async requestWebContentKeywordsAndRecommends(id: number) {
     try {
@@ -142,7 +136,6 @@ export class KakaopageService {
       throw err;
     }
   }
-
   // 작품의 댓글 정보 요청(한 페이지당 25개씩)
   async requestWebContentReviews(
     id: number,
@@ -175,23 +168,19 @@ export class KakaopageService {
       throw err;
     }
   }
-
   async getDailyRank_20_WebContents(contentType: Type) {
     let items = await this.requestDailyRanking(contentType);
     const ids = items.slice(0, 20).map((item) => ({
       id: +item.eventLog.eventMeta.series_id,
       rank: +item.rank,
     })); // 20위까지
-
     const webContentList = [];
     for (const { id, rank } of ids) {
       const webContent = await this.requestWebContent(id, rank);
       webContentList.push(webContent);
     }
-
     return webContentList;
   }
-
   async requestAllLatestWebContents(contentType: Type, page: number = 1) {
     try {
       const { data } = await axios({
@@ -221,7 +210,6 @@ export class KakaopageService {
       throw err;
     }
   }
-
   async getAll_96_WebContents(contentType: Type, currPage: number = 0) {
     const webContentList = [];
     for (let i = 1; i <= 4; i++) {
@@ -236,15 +224,12 @@ export class KakaopageService {
         webContentList.push(webContent);
       }
     }
-
     return webContentList;
   }
-
   async createDtosAndSave(data: WebContents[]) {
     try {
       const createContentDtos = data.map((content) => {
         const webContent = new WebContents();
-
         webContent.title = content.title;
         webContent.desc = content.desc;
         webContent.image = content.image;
@@ -259,43 +244,35 @@ export class KakaopageService {
         webContent.pReviews = content.pReviews;
         return webContent;
       });
-
       // DB에 저장
       await this.contentRepository.save(createContentDtos);
     } catch (err) {
       throw err;
     }
   }
-
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async createKakaopages() {
     const currPageWebnovel =
       +(await this.redisService.getValue('kakao_webnovel')) || 0;
     const currPageWebtoon =
       +(await this.redisService.getValue('kakao_webtoon')) || 0;
-
     try {
       const allWebnovels = await this.getAll_96_WebContents(
         Type.WEBNOVEL,
         currPageWebnovel,
       );
       await this.createDtosAndSave(allWebnovels);
-
       await this.redisService.save('kakao_webnovel', currPageWebnovel + 4);
-
       const allWebtoons = await this.getAll_96_WebContents(
         Type.WEBTOON,
         currPageWebtoon,
       );
       await this.createDtosAndSave(allWebtoons);
-
       await this.redisService.save('kakao_webtoon', currPageWebtoon + 4);
-
       const rankingWebnovels = await this.getDailyRank_20_WebContents(
         Type.WEBNOVEL,
       );
       await this.createDtosAndSave(rankingWebnovels);
-
       const rankingWebtoons = await this.getDailyRank_20_WebContents(
         Type.WEBTOON,
       );

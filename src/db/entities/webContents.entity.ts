@@ -12,6 +12,7 @@ import { IsEnum, IsInt, IsString } from 'class-validator';
 import { PReviews } from './platform.reviews.entity';
 import { ContentType } from '../type/webContent.type';
 import { CReviews } from './chillinker.reviews.entity';
+import { Bogosips } from './bogosips.entity';
 @Entity('web_contents')
 export class WebContents {
   /**
@@ -39,14 +40,6 @@ export class WebContents {
   title: string;
 
   /**
-   * isAdult
-   * @example 0
-   */
-  @IsInt()
-  @Column({ type: 'tinyint', default: 0 })
-  isAdult: number;
-
-  /**
    * desc
    * @example "대 화산파 13대 제자. 천하삼대검수(天下三代劍手). 매화검존(梅花劍尊) 청명(靑明) 천하를 혼란에 빠뜨린 고금제일마 천마(天魔)의 목을 치고 십만대산의 정상에서 영면. 백 년의 시간을 뛰어넘어 아이의 몸으로 다시 살아나다."
    */
@@ -66,6 +59,13 @@ export class WebContents {
    */
   @Column({ type: 'int', default: 0 })
   bogosipCount: number;
+
+  /**
+   * isAdult
+   * @example 0
+   */
+  @Column({ type: 'tinyint', default: 0 })
+  isAdult: number;
 
   /**
    * rank
@@ -124,4 +124,15 @@ export class WebContents {
     cascade: true,
   })
   cReviews: CReviews[];
+
+  //bogosip
+  //  @OneToMany(() => Bogosips, (bogosip) => bogosip.webContent)
+  //  bogosips: Bogosips[];
+
+  //collection
+  // @OneToMany(
+  //   () => ContentCollection,
+  //   (contentCollection) => contentCollection.webContent,
+  // )
+  // contentCollections: ContentCollection[];
 }
