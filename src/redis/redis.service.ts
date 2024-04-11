@@ -11,7 +11,6 @@ export class RedisService {
       password: this.configService.get<string>('REDIS_PASSWORD'),
     });
   }
-
   getClient(): Redis {
     return this.client;
   }
@@ -20,7 +19,7 @@ export class RedisService {
     if (expiresInSec) {
       await this.client.setex(key, expiresInSec, value);
     } else {
-      await this.client.set(key, value);
+      await this.client.setex(key, 32 * 3600, value); // 32h expire
     }
   }
 

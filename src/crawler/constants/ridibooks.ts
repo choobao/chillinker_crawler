@@ -10,5 +10,9 @@ export const ridibooks = {
       '#__next > div > section > div > form:nth-child(1) > input.fig-14s61w6.egtapdz0',
   },
   moreReviewBtn:
+    '#review_list_section > div.review_list_wrapper.js_review_list_wrapper.active > div.more_review_button_wrapper.js_more_review_button_wrapper',
+  moreReviewBtn1:
     '#review_list_section > div.review_list_wrapper.js_review_list_wrapper.active > div.more_review_button_wrapper.js_more_review_button_wrapper > button',
+  moreReviewBtn2:
+    '#review_list_section > div.review_list_wrapper.js_review_list_wrapper.active > div:nth-child(6) > button',
 };

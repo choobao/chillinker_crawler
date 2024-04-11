@@ -2,6 +2,9 @@ import { Injectable } from '@nestjs/common';
 import * as dotenv from 'dotenv';
 import { promises as fs } from 'fs';
 import { ridibooks } from '../constants/ridibooks';
+import { Cluster } from 'puppeteer-cluster';
+import { Cron } from '@nestjs/schedule';
+import { setTimeout as setTimeoutPromise } from 'timers/promises';
 
 dotenv.config();
 
@@ -39,19 +42,94 @@ export class RidiCrawlerService {
 
       await this.scrolling(page);
 
+      if (type === 'webNovels') {
+        const newLinks = await page.evaluate(() => {
+          const items = Array.from(
+            document.querySelectorAll(
+              '#__next > main > section > ul.fig-1w8zspb > li',
+            ),
+          ).slice(0);
+
+          return items.map((item) => {
+            const link = item.querySelector('a')?.getAttribute('href');
+            let rank = item.querySelector('div > div.fig-9njjsy')?.innerHTML;
+
+            if (+rank > 20) {
+              rank = null;
+            }
+
+            return { link, rank };
+          });
+        });
+
+        linkList.push(...newLinks);
+        currentPage += 1;
+      } else {
+        const newLinks = await page.evaluate(() => {
+          const items = Array.from(
+            document.querySelectorAll(
+              '#__next > main > section > ul.fig-1w8zspb > li',
+            ),
+          );
+          return items.map((item) => {
+            const link = item.querySelector('a')?.getAttribute('href');
+            let rank = item.querySelector('div > div.fig-9njjsy')?.innerHTML;
+
+            if (+rank > 20) {
+              rank = null;
+            }
+
+            return { link, rank };
+          });
+        });
+
+        linkList.push(...newLinks);
+        currentPage += 1;
+      }
+    }
+    return linkList;
+  }
+
+  async getBest20LinkList(page: any, type: string, url: string) {
+    let currentPage = 1;
+    let linkList: any[] = [];
+
+    const result = type === 'webNovels' ? 'romance_serial' : 'webtoon';
+
+    const newUrl = `${url}/bestsellers/${result}?page=${currentPage}&order=daily`;
+    console.log(`Start Crawling: ${newUrl}`);
+    await page.goto(newUrl, { waitUntil: 'networkidle0' });
+
+    await this.scrolling(page);
+
+    if (type === 'webNovels') {
       const newLinks = await page.evaluate(() => {
         const items = Array.from(
           document.querySelectorAll(
             '#__next > main > section > ul.fig-1w8zspb > li',
           ),
-        );
+        ).slice(1, 21);
+
         return items.map((item) => {
           const link = item.querySelector('a')?.getAttribute('href');
           let rank = item.querySelector('div > div.fig-9njjsy')?.innerHTML;
 
-          if (+rank > 20) {
-            rank = null;
-          }
+          return { link, rank };
+        });
+      });
+
+      linkList.push(...newLinks);
+      currentPage += 1;
+    } else {
+      const newLinks = await page.evaluate(() => {
+        const items = Array.from(
+          document.querySelectorAll(
+            '#__next > main > section > ul.fig-1w8zspb > li',
+          ),
+        ).slice(0, 20);
+        return items.map((item) => {
+          const link = item.querySelector('a')?.getAttribute('href');
+          let rank = item.querySelector('div > div.fig-9njjsy')?.innerHTML;
 
           return { link, rank };
         });
@@ -125,11 +203,11 @@ export class RidiCrawlerService {
 
         return items.map((item) => {
           return {
-            isAdult: item.querySelector(
-              '#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_thumbnail_wrap > div.header_thumbnail.book_macro_200.detail_scalable_thumbnail > div > div > span',
-            )
-              ? true
-              : false,
+            // isAdult: item.querySelector(
+            //   '#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_thumbnail_wrap > div.header_thumbnail.book_macro_200.detail_scalable_thumbnail > div > div > span',
+            // )
+            //   ? true
+            //   : false,
             title: item.querySelector(
               '#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_info_wrap > div.info_title_wrap > h1',
             )?.textContent,
@@ -138,18 +216,18 @@ export class RidiCrawlerService {
                 'div.header_thumbnail_wrap > div.header_thumbnail.book_macro_200.detail_scalable_thumbnail > div > div > div > img',
               )
               ?.getAttribute('src'),
-            score: item.querySelector(
-              '#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_info_wrap > div:nth-child(3) > p > span > span.StarRate_Score',
-            )?.textContent,
+            // score: item.querySelector(
+            //   '#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_info_wrap > div:nth-child(3) > p > span > span.StarRate_Score',
+            // )?.textContent,
             scoreParticipant: item.querySelector(
               '#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_info_wrap > div:nth-child(3) > p > span > span.StarRate_ParticipantCount',
             ).textContent,
-            userLikes: item.querySelector(
-              '#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_thumbnail_wrap > div.header_preference > button > span > span.button_text.js_preference_count',
-            )?.textContent,
-            status: item.querySelector(
-              '#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_info_wrap > div:nth-child(4) > p.metadata.metadata_info_series_complete_wrap > span.metadata_item.not_complete',
-            )?.textContent,
+            // userLikes: item.querySelector(
+            //   '#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_thumbnail_wrap > div.header_preference > button > span > span.button_text.js_preference_count',
+            // )?.textContent,
+            // status: item.querySelector(
+            //   '#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_info_wrap > div:nth-child(4) > p.metadata.metadata_info_series_complete_wrap > span.metadata_item.not_complete',
+            // )?.textContent,
             pubDate: item
               .querySelector(
                 '#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.Header_Metadata_Block > ul:nth-child(2) > li.Header_Metadata_Item.book_info.published_date_info > ul > li',
@@ -229,6 +307,8 @@ export class RidiCrawlerService {
       let isAdult = false;
       if (type == 'webContents') {
         isAdult = webContent.some((content) => content.genre.includes('성인'));
+      } else {
+        isAdult = await page.$eval('.badge_adult', (element) => !!element);
       }
 
       const scrapDate = new Date().toLocaleDateString();
@@ -241,63 +321,104 @@ export class RidiCrawlerService {
         scrapDate,
       };
 
+      let contentTitle = webContent.map((content) => content.title);
+      let reivewLength = webContent.map((content) => content.scoreParticipant);
+
+      if (+reivewLength == 0) {
+        return { contentTitle, webContents };
+      }
+
       page.bringToFront();
 
-      const reviews = await this.scrapReviews(page);
+      const reviews = await this.scrapReviews(contentTitle, page);
 
       return {
+        contentTitle,
         webContents,
         reviews,
       };
     } catch (err) {
-      await page.bringToFront();
       console.log('❌❌❌❌', page.url(), err);
     }
   }
 
-  async scrapReviews(page: any) {
-    await page.evaluate(async () => {
-      await new Promise((resolve, reject) => {
-        let totalHeight = 0;
-        const distance = 100;
-        const scrollStep = () => {
-          window.scrollBy(0, distance);
-          totalHeight += distance;
-          const button = document.querySelector(
-            '#review_list_section > div.rui_tab_and_order > ul.rui_order.js_review_list_order_wrapper > li:nth-child(2)',
-          );
-          if (button) {
-            resolve(true);
-            return;
-          }
-          setTimeout(scrollStep, 100);
-        };
-        scrollStep();
-      });
-    });
+  async scrapReviews(contentTitle: string, page: any) {
+    await this.scrolling(page);
+
+    page.bringToFront();
 
     await page.click(
       '#review_list_section > div.rui_tab_and_order > ul.rui_order.js_review_list_order_wrapper > li:nth-child(2)',
     );
 
-    for (let i = 1; i < 3; i++) {
-      try {
-        await page.waitForSelector(ridibooks.moreReviewBtn, {
-          setTimeout: 1000,
+    await page.waitForSelector(
+      '#review_list_section > div.review_list_wrapper.js_review_list_wrapper.active > ul > li',
+    );
+
+    let reviewList = await page.$$(
+      '#review_list_section > div.review_list_wrapper.js_review_list_wrapper.active > ul > li',
+    );
+
+    console.log(reviewList.length);
+
+    while (reviewList.length < 30) {
+      await page.waitForSelector(
+        '#review_list_section > div.review_list_wrapper.js_review_list_wrapper.active > ul > li',
+        { waitUntil: 'networkidle0' },
+      );
+
+      await page.evaluate(async () => {
+        await new Promise((resolve, reject) => {
+          let totalHeight = 0;
+          const distance = 100;
+          const scrollStep = () => {
+            window.scrollBy(0, distance);
+            totalHeight += distance;
+            const button = document.querySelector(
+              '#review_list_section > div.review_list_wrapper.js_review_list_wrapper.active > ul > li',
+            );
+            if (button) {
+              resolve(true);
+              return;
+            }
+            if (!button) {
+              resolve(true);
+              return;
+            }
+            setTimeout(scrollStep, 3000);
+          };
+          scrollStep();
         });
-        await page.click(ridibooks.moreReviewBtn);
-      } catch (error) {
+      });
+
+      if (!(await page.$(ridibooks.moreReviewBtn))) {
         break;
       }
+
+      await page.waitForSelector(ridibooks.moreReviewBtn);
+
+      await page.click(ridibooks.moreReviewBtn);
+
+      reviewList = await page.$$(
+        '#review_list_section > div.review_list_wrapper.js_review_list_wrapper.active > ul > li',
+      );
+
+      if (!(await page.$(ridibooks.moreReviewBtn))) {
+        break;
+      }
+
+      console.log(reviewList.length);
     }
 
-    await this.scrolling(page);
-
-    const contentTitle = await page.evaluate(() => {
-      return document.querySelector(
-        '#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_info_wrap > div.info_title_wrap > h1',
-      )?.textContent;
-    });
+    // for (let i = 1; i <= 4; i++) {
+    //   try {
+    //     await page.waitForSelector(ridibooks.moreReviewBtn, {
+    //       setTimeout: 1000,
+    //     });
+    //     await page.click(ridibooks.moreReviewBtn);
+    //     console.log(`${i}번클릭`);
+    //   } catch (error) {}
+    // }
 
     const reviewsData = await page.evaluate(() => {
       const items = Array.from(
@@ -305,7 +426,14 @@ export class RidiCrawlerService {
           '#review_list_section > div.review_list_wrapper.js_review_list_wrapper.active > ul > li',
         ),
       );
-      return items.map((item) => {
+
+      // if (items.length == 0) {
+      //   return [];
+      // }
+
+      const reviewCount = Math.min(items.length, 30);
+
+      return items.slice(0, reviewCount).map((item) => {
         return {
           writer: item.querySelector(
             'div.list_left.js_review_info_wrapper > div > p > span.reviewer_id',
@@ -327,8 +455,13 @@ export class RidiCrawlerService {
     // const scrapDate = new Date().toLocaleDateString();
 
     // const reviews = { contentTitle, reviewsData, scrapDate };
+    page.bringToFront();
 
     return { contentTitle, reviewsData };
+
+    // const scrapDate = new Date().toLocaleDateString();
+
+    // const reviews = { contentTitle, reviewsData, scrapDate };
   }
 
   async scrolling(page: any) {
@@ -349,18 +482,15 @@ export class RidiCrawlerService {
     });
   }
 
-  async createJsonFile(type: string, webContentAndReview: any) {
+  async createJsonFile(type: string, posts: any) {
     try {
       const result = type === 'webNovels' ? 'webNovels' : 'posts';
-      console.log(webContentAndReview[2]);
-      console.log(webContentAndReview[2].webContents);
-      console.log(webContentAndReview[2].reviews);
-      for (let i = 0; i < webContentAndReview.length; i++) {
-        const imageUrls = webContentAndReview[i].webContents.webContent.map(
+
+      for (let i = 0; i < posts.length; i++) {
+        const imageUrls = posts[i].webContents.webContent.map(
           (item) => item.img,
         );
 
-        console.log(webContentAndReview[i].webContents);
         const fileName = imageUrls.map((url) => {
           const matchResult = url.match(/(?<=cover\/)\d+/);
           if (matchResult) {
@@ -372,15 +502,15 @@ export class RidiCrawlerService {
 
         await fs.writeFile(
           `${result}/${fileName}.json`,
-          JSON.stringify(webContentAndReview[i].webContents),
+          JSON.stringify(posts[i].webContents),
         );
 
-        await fs.writeFile(
-          `reviews/${fileName}.json`,
-          JSON.stringify(webContentAndReview[i].reviews),
-        );
-
-        console.log(`${webContentAndReview[i].reviews.title} 파일 생성완료!`);
+        if (posts[i].reviews) {
+          await fs.writeFile(
+            `reviews/${fileName}.json`,
+            JSON.stringify(posts[i].reviews),
+          );
+        }
       }
     } catch (err) {
       console.error(err);

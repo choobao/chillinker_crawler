@@ -7,6 +7,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { CrawlerModule } from './crawler/crawler.module';
 import { RedisModule } from './redis/redis.module';
+
 import Joi from 'joi';
 
 const typeOrmModuleOptions = {

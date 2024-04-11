@@ -12,6 +12,7 @@ import { IsEnum, IsInt, IsString } from 'class-validator';
 import { PReviews } from './platform.reviews.entity';
 import { ContentType } from '../type/webContent.type';
 import { CReviews } from './chillinker.reviews.entity';
+import { Bogosips } from './bogosips.entity';
 @Entity('web_contents')
 export class WebContents {
   /**
@@ -58,6 +59,13 @@ export class WebContents {
    */
   @Column({ type: 'int', default: 0 })
   bogosipCount: number;
+
+  /**
+   * isAdult
+   * @example 0
+   */
+  @Column({ type: 'tinyint', default: 0 })
+  isAdult: number;
 
   /**
    * rank
@@ -116,4 +124,15 @@ export class WebContents {
     cascade: true,
   })
   cReviews: CReviews[];
+
+  //bogosip
+  //  @OneToMany(() => Bogosips, (bogosip) => bogosip.webContent)
+  //  bogosips: Bogosips[];
+
+  //collection
+  // @OneToMany(
+  //   () => ContentCollection,
+  //   (contentCollection) => contentCollection.webContent,
+  // )
+  // contentCollections: ContentCollection[];
 }

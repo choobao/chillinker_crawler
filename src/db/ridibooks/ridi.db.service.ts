@@ -122,8 +122,13 @@ export class RidiDbService {
       for (let j = 0; j < datas[i].reviewsData.length; j++) {
         const { writer, content, likeCount, date } = datas[i].reviewsData[j];
 
+        const invalidEmoji = content.replace(
+          /([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g,
+          '',
+        );
+
         await this.PReviewsRepository.save({
-          content: content,
+          content: invalidEmoji,
           likeCount: likeCount,
           writer: writer,
           date: date,
