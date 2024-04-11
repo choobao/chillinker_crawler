@@ -54,6 +54,7 @@ export class RidiDbService {
 
       await this.webContentRepository.save({
         contentType: ContentType.WEBNOVEL,
+        isAdult,
         rank: rrank,
         title: title,
         desc: d,
@@ -95,8 +96,25 @@ export class RidiDbService {
       const c = author.join(', ');
       const d = dsc.join(', ');
 
+      if (isAdult === false) {
+        await this.webContentRepository.save({
+          contentType: ContentType.WEBTOON,
+          rank: rrank,
+          title: title,
+          desc: d,
+          image: img,
+          author: c,
+          keyword: b,
+          category: a,
+          platform,
+          pubDate: data,
+        });
+
+        return;
+      }
       await this.webContentRepository.save({
         contentType: ContentType.WEBTOON,
+        isAdult: 1,
         rank: rrank,
         title: title,
         desc: d,
@@ -110,33 +128,37 @@ export class RidiDbService {
     }
   }
   async saveReviewToDb(datas: any) {
-    console.log(datas[0]);
-
     for (let i = 0; i < datas.length; i++) {
+      console.log(datas.length);
       const { contentTitle, reviewsData } = datas[i];
 
       const webContentId = await this.webContentRepository.findOne({
-        where: { title: contentTitle },
+        where: { title: contentTitle[0] },
       });
 
       for (let j = 0; j < datas[i].reviewsData.length; j++) {
         const { writer, content, likeCount, date } = datas[i].reviewsData[j];
 
-        const invalidEmoji = content.replace(
-          /([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g,
-          '',
-        );
-
-        await this.PReviewsRepository.save({
-          content: invalidEmoji,
-          likeCount: likeCount,
-          writer: writer,
-          date: date,
-          webContentId: webContentId.id,
-        });
+        if (datas[i].reviewsData[j].isSpoiler) {
+          await this.PReviewsRepository.save({
+            content: content,
+            likeCount: likeCount,
+            isSpoiler: true,
+            writer: writer,
+            createdAt: date,
+            webContentId: webContentId.id,
+          });
+        } else {
+          await this.PReviewsRepository.save({
+            content: content,
+            likeCount: likeCount,
+            writer: writer,
+            createdAt: date,
+            webContentId: webContentId.id,
+          });
+        }
       }
     }
-
     return console.log('저장완료');
   }
 }

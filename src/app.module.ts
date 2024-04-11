@@ -24,6 +24,7 @@ const typeOrmModuleOptions = {
     autoLoadEntities: true,
     synchronize: configService.get('DB_SYNC'),
     logging: true,
+    charset: 'utf8mb4',
   }),
   inject: [ConfigService],
 };

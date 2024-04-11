@@ -351,64 +351,76 @@ export class RidiCrawlerService {
       '#review_list_section > div.rui_tab_and_order > ul.rui_order.js_review_list_order_wrapper > li:nth-child(2)',
     );
 
-    await page.waitForSelector(
-      '#review_list_section > div.review_list_wrapper.js_review_list_wrapper.active > ul > li',
-    );
-
-    let reviewList = await page.$$(
-      '#review_list_section > div.review_list_wrapper.js_review_list_wrapper.active > ul > li',
-    );
-
-    console.log(reviewList.length);
-
-    while (reviewList.length < 30) {
-      await page.waitForSelector(
-        '#review_list_section > div.review_list_wrapper.js_review_list_wrapper.active > ul > li',
-        { waitUntil: 'networkidle0' },
-      );
-
-      await page.evaluate(async () => {
-        await new Promise((resolve, reject) => {
-          let totalHeight = 0;
-          const distance = 100;
-          const scrollStep = () => {
-            window.scrollBy(0, distance);
-            totalHeight += distance;
-            const button = document.querySelector(
-              '#review_list_section > div.review_list_wrapper.js_review_list_wrapper.active > ul > li',
-            );
-            if (button) {
-              resolve(true);
-              return;
-            }
-            if (!button) {
-              resolve(true);
-              return;
-            }
-            setTimeout(scrollStep, 3000);
-          };
-          scrollStep();
+    for (let i = 1; i < 3; i++) {
+      try {
+        await page.waitForSelector(ridibooks.moreReviewBtn, {
+          setTimeout: 1000,
         });
-      });
-
-      if (!(await page.$(ridibooks.moreReviewBtn))) {
+        await page.click(ridibooks.moreReviewBtn);
+      } catch (error) {
         break;
       }
-
-      await page.waitForSelector(ridibooks.moreReviewBtn);
-
-      await page.click(ridibooks.moreReviewBtn);
-
-      reviewList = await page.$$(
-        '#review_list_section > div.review_list_wrapper.js_review_list_wrapper.active > ul > li',
-      );
-
-      if (!(await page.$(ridibooks.moreReviewBtn))) {
-        break;
-      }
-
-      console.log(reviewList.length);
     }
+    await this.scrolling(page);
+
+    // await page.waitForSelector(
+    //   '#review_list_section > div.review_list_wrapper.js_review_list_wrapper.active > ul > li',
+    // );
+
+    // let reviewList = await page.$$(
+    //   '#review_list_section > div.review_list_wrapper.js_review_list_wrapper.active > ul > li',
+    // );
+
+    // console.log(reviewList.length);
+
+    // while (reviewList.length < 30) {
+    //   await page.waitForSelector(
+    //     '#review_list_section > div.review_list_wrapper.js_review_list_wrapper.active > ul > li',
+    //     { waitUntil: 'networkidle0' },
+    //   );
+
+    //   await page.evaluate(async () => {
+    //     await new Promise((resolve, reject) => {
+    //       let totalHeight = 0;
+    //       const distance = 100;
+    //       const scrollStep = () => {
+    //         window.scrollBy(0, distance);
+    //         totalHeight += distance;
+    //         const button = document.querySelector(
+    //           '#review_list_section > div.review_list_wrapper.js_review_list_wrapper.active > ul > li',
+    //         );
+    //         if (button) {
+    //           resolve(true);
+    //           return;
+    //         }
+    //         if (!button) {
+    //           resolve(true);
+    //           return;
+    //         }
+    //         setTimeout(scrollStep, 3000);
+    //       };
+    //       scrollStep();
+    //     });
+    //   });
+
+    //   if (!(await page.$(ridibooks.moreReviewBtn))) {
+    //     break;
+    //   }
+
+    //   await page.waitForSelector(ridibooks.moreReviewBtn);
+
+    //   await page.click(ridibooks.moreReviewBtn);
+
+    //   reviewList = await page.$$(
+    //     '#review_list_section > div.review_list_wrapper.js_review_list_wrapper.active > ul > li',
+    //   );
+
+    //   if (!(await page.$(ridibooks.moreReviewBtn))) {
+    //     break;
+    //   }
+
+    //   console.log(reviewList.length);
+    // }
 
     // for (let i = 1; i <= 4; i++) {
     //   try {
@@ -442,6 +454,9 @@ export class RidiCrawlerService {
             ?.textContent,
           likeCount: item.querySelector(
             'div.list_right.js_review_wrapper > div.review_status > div > button.rui_button_white_25.like_button.js_like_button > span > span.rui_button_text > span.like_count.js_like_count',
+          )?.textContent,
+          isSpoiler: item.querySelector(
+            'div.list_right.js_review_wrapper > div.rui_full_alert_4.spoiler_alert.js_spoiler_alert > article > p',
           )?.textContent,
           date: item
             .querySelector(

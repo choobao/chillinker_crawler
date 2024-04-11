@@ -60,7 +60,7 @@ export class RidiCrawlerController {
     try {
       const url = ridibooks.ridiPage;
       const browser = await puppeteer.launch({
-        headless: false,
+        headless: true,
       });
       const page = await browser.newPage();
 
