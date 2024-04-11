@@ -52,19 +52,34 @@ export class RidiDbService {
       const c = author.join(', ');
       const d = dsc.join(', ');
 
-      await this.webContentRepository.save({
-        contentType: ContentType.WEBNOVEL,
-        isAdult,
-        rank: rrank,
-        title: title,
-        desc: d,
-        image: img,
-        author: c,
-        keyword: b,
-        category: a,
-        platform,
-        pubDate: data,
-      });
+      if (isAdult === false) {
+        await this.webContentRepository.save({
+          contentType: ContentType.WEBNOVEL,
+          rank: rrank,
+          title: title,
+          desc: d,
+          image: img,
+          author: c,
+          keyword: b,
+          category: a,
+          platform,
+          pubDate: data,
+        });
+      } else {
+        await this.webContentRepository.save({
+          contentType: ContentType.WEBNOVEL,
+          isAdult: 1,
+          rank: rrank,
+          title: title,
+          desc: d,
+          image: img,
+          author: c,
+          keyword: b,
+          category: a,
+          platform,
+          pubDate: data,
+        });
+      }
     }
 
     return console.log('저장완료');
@@ -109,22 +124,21 @@ export class RidiDbService {
           platform,
           pubDate: data,
         });
-
-        return;
+      } else {
+        await this.webContentRepository.save({
+          contentType: ContentType.WEBTOON,
+          isAdult: 1,
+          rank: rrank,
+          title: title,
+          desc: d,
+          image: img,
+          author: c,
+          keyword: b,
+          category: a,
+          platform,
+          pubDate: data,
+        });
       }
-      await this.webContentRepository.save({
-        contentType: ContentType.WEBTOON,
-        isAdult: 1,
-        rank: rrank,
-        title: title,
-        desc: d,
-        image: img,
-        author: c,
-        keyword: b,
-        category: a,
-        platform,
-        pubDate: data,
-      });
     }
   }
   async saveReviewToDb(datas: any) {
@@ -136,7 +150,7 @@ export class RidiDbService {
         where: { title: contentTitle[0] },
       });
 
-      for (let j = 0; j < datas[i].reviewsData.length; j++) {
+      for (let j = 0; j < 30; j++) {
         const { writer, content, likeCount, date } = datas[i].reviewsData[j];
 
         if (datas[i].reviewsData[j].isSpoiler) {
